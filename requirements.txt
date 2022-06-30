@@ -1,0 +1,7 @@
+dash=2.1.0
+pandas
+numpy
+selenium=3.141.0
+beautifulsoup4=4.9.3
+waitress
+python-dotenv

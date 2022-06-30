@@ -1,0 +1,17 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# Chromedriver
+chromedriver*.exe
+
+# Spyder folder
+.spyproject/
+
+# Database object
+*.db
+
+# Temp SQL script
+*.sql
+
+# Environment file
+.env
