@@ -5,7 +5,7 @@ There are two main parts:
 1. Scraping
 2. Web application
     - Link: http://54.202.152.22:8000/
-
+    - It is hosted in an instance with limited cpu resources and 1GB RAM. So do expect a bit of slowness, compared to a local host.
 ## Scraping
 To scrape data from https://www3.hkexnews.hk/sdw/search/searchsdw.aspx<br>
 In order to reduce data size, I only scrape records with shareholdiing > 0.1% for first 2000 stocks (refer to config.py).<br>
