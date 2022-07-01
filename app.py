@@ -6,7 +6,7 @@ Created on Thu Jun 30 18:43:24 2022
 """
 
 import dash
-from dash import dcc, html
+from dash import dcc, html, no_update
 from dash.dependencies import Input, Output
 
 from waitress import serve
@@ -32,6 +32,7 @@ app.config.suppress_callback_exceptions = True # Dynamic layout will trigger unn
 app.layout = html.Div([
     dcc.Store(id='trend-analysis-store'),
     dcc.Store(id='transaction-finder-store'),
+    dcc.Store(id='transaction-finder-selected-participant'),
     dcc.Tabs(id="tabs", value='trend-analysis', children=[
         dcc.Tab(label='Trend Analysis', value='trend-analysis'),        
         dcc.Tab(label='Transaction Finder', value='transaction-finder')  
@@ -121,6 +122,78 @@ def on_transaction_finder_data_changed(data, threshold):
     )
     return top_changes, bottom_changes
 
+@app.callback(
+    Output("dt-top-changes-in-shareholding", "selected_rows"),
+    Output("dt-bottom-changes-in-shareholding", "selected_rows"),
+    Output("transaction-finder-selected-participant", "data"),
+    Input("dt-top-changes-in-shareholding", "selected_rows"),
+    Input("dt-bottom-changes-in-shareholding", "selected_rows"),
+    Input('dt-top-changes-in-shareholding', 'data'),
+    Input('dt-bottom-changes-in-shareholding', 'data'),
+    prevent_initial_call=True
+)
+def on_change_row_selected(top_selected_rows, bottom_selected_rows, top_change_data, bot_change_data):
+    ctx = dash.callback_context
+    trigger_id, trigger_props = ctx.triggered[0]["prop_id"].split(".")[0], ctx.triggered[0]["prop_id"].split(".")[1]
+    
+    # Unselect participant when filter has changed
+    if trigger_props == 'data':
+        return [], [], None
+    # Below logic is to ensure only 1 participant is selected
+    elif trigger_id == 'dt-top-changes-in-shareholding':
+        if len(top_selected_rows):
+            return top_selected_rows, [], top_change_data[top_selected_rows[0]]
+        else:
+            return [], no_update, no_update
+    elif trigger_id == 'dt-bottom-changes-in-shareholding':
+        if len(bottom_selected_rows):
+            return [], bottom_selected_rows, bot_change_data[bottom_selected_rows[0]]
+        else:
+            return no_update, [], no_update
+
+@app.callback(
+    Output("dt-possible-exchanged-participants", "data"),
+    Input('transaction-finder-store', 'data'),
+    Input("transaction-finder-selected-participant", "data"),
+    prevent_initial_call=True
+)
+def on_change_selected_participant(shareholding_data, selected_participant):
+    # Empty table if no participant is selected
+    if selected_participant is None:
+        return []
+    
+    participant_change = selected_participant['ChangeInPercentShares']
+    is_buyer = participant_change > 0
+    
+    # Get whole list of possible buyers/sellers (in opposite direction)
+    shareholding_data = list(
+        sorted(
+            filter(
+                lambda d: d['ChangeInPercentShares'] < 0 if is_buyer else d['ChangeInPercentShares'] > 0,
+                shareholding_data
+            ),
+            key=lambda d: d['ChangeInPercentShares'],
+            reverse=not is_buyer # Asc if participant is a buyer
+        )
+    )
+    
+    # Heuristic to get those the participant has possibly exchanged with
+    results = []
+    running_changes = 0
+    for other_participant in shareholding_data:
+        # For bigger buyer / sellers (who buys/sells more than 50% of the change of selected participant):
+        #   Include all of them
+        if abs(other_participant['ChangeInPercentShares']) >= 0.5 * abs(participant_change):
+            results.append(other_participant)
+            continue
+        # For smaller buyer / sellers:
+        #   Accumulate until the changes of them sum up to the change of selected participant
+        if (running_changes <= abs(participant_change)):
+            results.append(other_participant)
+            running_changes += abs(other_participant['ChangeInPercentShares'])
+    
+    return results
+    
     
 if __name__ == "__main__":
     env = load_base_env()
