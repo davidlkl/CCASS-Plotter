@@ -74,4 +74,4 @@ if __name__ == "__main__":
     - Chrome
     - Git
 4. Schedule daily restart / kill job for the web app
-    - Start at 0100 and Kill at 0055
+    - Start at 0100 and Kill at 0059
