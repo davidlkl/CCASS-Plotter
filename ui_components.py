@@ -64,13 +64,13 @@ def get_trend_analysis_tab(stock_map_list: list, min_date: datetime.date, max_da
 def get_transaction_finder_tab(stock_map_list: list, min_date: datetime.date, max_date: datetime.date):
     return html.Div([
         html.H3(children="CCASS Transaction Finder"),
-        html.P(
-            children="""
-            Detect possible transactions between two participants.
-            Participants with shareholding changes >= threshold (%) between start date and end date will be listed below
-            Select a participant to list the possible participants who may have exchanged shares with
-            """,
-        ),
+        html.P([
+            "Detect possible transactions between two participants.",
+            html.Br(),
+            "Participants with shareholding changes >= threshold (%) between start date and end date will be listed below.",
+            html.Br(),
+            "Select a participant to list the possible participants who may have exchanged shares with."
+        ]),
         html.Div([
             html.Div([
                 html.H4("Select Stock Code"),
