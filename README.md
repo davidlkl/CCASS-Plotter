@@ -6,6 +6,7 @@ There are two main parts:
 2. Web application
     - Link: http://54.202.152.22:8000/
     - It is hosted in an instance with limited cpu resources and 1GB RAM. So do expect a bit of slowness, compared to a local host.
+    - There may be downtime between 01:00 HKT and 01:30 HKT due to a daily restart
 ## Scraping
 To scrape data from https://www3.hkexnews.hk/sdw/search/searchsdw.aspx<br>
 In order to reduce data size, I only scrape records with shareholdiing > 0.1% for first 2000 stocks (refer to config.py).<br>
@@ -73,4 +74,4 @@ if __name__ == "__main__":
     - Chrome
     - Git
 4. Schedule daily restart / kill job for the web app
-    - Start at 0005 and Kill at 1155
+    - Start at 0100 and Kill at 0055
