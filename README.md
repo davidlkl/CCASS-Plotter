@@ -32,6 +32,8 @@ def main():
     # executor = ThreadPoolExecutor(max_workers=12)
     # jobs = [executor.submit(scrape_task, i, DATE_RANGE_LIST[::-1][i]) for i in range(0, len(DATE_RANGE_LIST))]
 ```
+#### Expected output:
+A SQLite3 database ("ccass.db") will be created with two tables CCASS and StockMap.<br>
 
 ## Web application
 A simple interactive dashboard that has two tabs:
@@ -48,7 +50,10 @@ A production-quality pure-Python WSGI server.
 ```
 BASE_ENV=DEV
 ```
-2. Run app.py<br>
+2. Some data has been scraped so that ccass.db exists<br>
+The db file is 3GB in size so it is not uploaded.<br>
+To run this web app please run some scrapping first.
+3. Run app.py<br>
 Dash development server will be used if BASE_ENV is DEV, which supports features like hot-reloading, error messages etc.<br>
 Waitress server will be used if BASE_ENV is PROD, which gives much better performance than development server.
 ```
