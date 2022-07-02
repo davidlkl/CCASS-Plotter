@@ -24,7 +24,7 @@ def get_trend_analysis_tab(stock_map_list: list, min_date: datetime.date, max_da
             html.Div([
                 html.H4("Select Stock Code"),
                 dcc.Dropdown(
-                    id="select-stock",
+                    id="trend-analysis-select-stock",
                     options=[
                         {
                             "label": f"{stock['stockCode']} - {stock['stockName']}",
@@ -39,7 +39,7 @@ def get_trend_analysis_tab(stock_map_list: list, min_date: datetime.date, max_da
             html.Div([
                 html.H4("Select Date Range"),
                 dcc.DatePickerRange(
-                    id="select-date-range",
+                    id="trend-analysis-select-date-range",
                     min_date_allowed=min_date,
                     max_date_allowed=max_date + datetime.timedelta(days=1),
                     start_date=min_date,
@@ -75,7 +75,7 @@ def get_transaction_finder_tab(stock_map_list: list, min_date: datetime.date, ma
             html.Div([
                 html.H4("Select Stock Code"),
                 dcc.Dropdown(
-                    id="select-stock",
+                    id="transaction-finder-select-stock",
                     options=[
                         {
                             "label": f"{stock['stockCode']} - {stock['stockName']}",
@@ -90,7 +90,7 @@ def get_transaction_finder_tab(stock_map_list: list, min_date: datetime.date, ma
             html.Div([
                 html.H4("Select Date Range"),
                 dcc.DatePickerRange(
-                    id="select-date-range",
+                    id="transaction-finder-select-date-range",
                     min_date_allowed=min_date,
                     max_date_allowed=max_date + datetime.timedelta(days=1),
                     start_date=min_date,
@@ -99,7 +99,7 @@ def get_transaction_finder_tab(stock_map_list: list, min_date: datetime.date, ma
             ], style=dict(maxWidth='33%', marginLeft='20px')),
             html.Div([
                 html.H4("Input Threshold (%)"),
-                dcc.Input(id='input-threshold', type='number', debounce=True, value=0.5, min=0.1, max=100, step=0.1),
+                dcc.Input(id='transaction-finder-input-threshold', type='number', debounce=True, value=0.5, min=0.1, max=100, step=0.1),
             ], style=dict(width='33%', marginLeft='20px')),
         ], style=dict(display='flex')),
         html.Div([

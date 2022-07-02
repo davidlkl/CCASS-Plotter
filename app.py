@@ -52,10 +52,9 @@ def render_content(tab):
 
 @app.callback(
     Output('trend-analysis-store', 'data'),
-    Output('transaction-finder-store', 'data'),
-    Input('select-stock', 'value'),
-    Input('select-date-range', 'start_date'),
-    Input('select-date-range', 'end_date'),     
+    Input('trend-analysis-select-stock', 'value'),
+    Input('trend-analysis-select-date-range', 'start_date'),
+    Input('trend-analysis-select-date-range', 'end_date'),     
 )
 def on_stock_code_selected(selected_stock_code, start_date, end_date):
     
@@ -69,14 +68,26 @@ def on_stock_code_selected(selected_stock_code, start_date, end_date):
         selected_stock_code, start_date_string, end_date_string, conn
     )
     
+    return df_trend_top.to_dict('records')
+        
+@app.callback(
+    Output('transaction-finder-store', 'data'),
+    Input('transaction-finder-select-stock', 'value'),
+    Input('transaction-finder-select-date-range', 'start_date'),
+    Input('transaction-finder-select-date-range', 'end_date'),     
+)
+def on_transaction_finder_filter_selected(selected_stock_code, start_date, end_date):
+    start_date_object = datetime.date.fromisoformat(start_date)
+    start_date_string = start_date_object.strftime('%Y-%m-%d')
+        
+    end_date_object = datetime.date.fromisoformat(end_date)
+    end_date_string = end_date_object.strftime('%Y-%m-%d')
+    
     df_shareholding_delta = get_shareholding_delta_for_transaction_finder(
         selected_stock_code, start_date_string, end_date_string, conn
     )
-    return (
-        df_trend_top.to_dict('records'),
-        df_shareholding_delta.to_dict('records')
-    )
-
+    
+    return df_shareholding_delta.to_dict('records')
 
 @app.callback(
     Output('trend-plot', 'figure'),
@@ -102,7 +113,7 @@ def on_trend_analysis_data_changed(data):
     Output('dt-top-changes-in-shareholding', 'data'),
     Output('dt-bottom-changes-in-shareholding', 'data'),
     Input('transaction-finder-store', 'data'),
-    Input('input-threshold', 'value'),
+    Input('transaction-finder-input-threshold', 'value'),
 )
 def on_transaction_finder_data_changed(data, threshold):
     
