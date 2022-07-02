@@ -72,20 +72,18 @@ def get_shareholding_delta_for_transaction_finder(stock_code: str, start_date_st
     	end_date_shareholding as (
     		select datadate, ParticipantID, ParticipantName, FracOfShares from {CCASS_TABLE_NAME}
     		WHERE StockCode = "{stock_code}"
-    		and DataDate = "{end_date_str}"
+    		and DataDate = (select max(DataDate) from {STOCK_MAP_TABLE_NAME} where DataDate <= "{end_date_str}")
     	), 
     	start_date_shareholding as (
     		select datadate, ParticipantID, ParticipantName, FracOfShares from {CCASS_TABLE_NAME}
     		WHERE StockCode = "{stock_code}"
-    		and DataDate = "{start_date_str}"
+    		and DataDate = (select max(DataDate) from {STOCK_MAP_TABLE_NAME} where DataDate <= "{start_date_str}")
     	),
     	joint_shareholding as (
     		select 
     			a.ParticipantID,
                 a.ParticipantName,
-    			ifnull(b.DataDate, "{start_date_str}")  as startDataDate,
     			ifnull(b.FracOfShares, 0) as startFracOfShare,
-    			a.DataDate as endDataDate,
     			a.FracOfShares as endFracOfShare
     		from end_date_shareholding a 
     		left outer join start_date_shareholding b
@@ -94,9 +92,7 @@ def get_shareholding_delta_for_transaction_finder(stock_code: str, start_date_st
     		select 
     			a.ParticipantID,
                 a.ParticipantName,
-    			a.DataDate as startDataDate,
     			a.FracOfShares as startFracOfShare,
-    			ifnull(b.DataDate, "{end_date_str}") as endDataDate,
     			ifnull(b.FracOfShares,0) as endFracOfShare
     		from start_date_shareholding a 
     		left outer join end_date_shareholding b
@@ -125,7 +121,7 @@ def get_shareholding_time_series_for_top_participants(stock_code: str, start_dat
         			select ParticipantID, Shareholding from {CCASS_TABLE_NAME}
         			where
         				stockcode = "{stock_code}" and 
-        				datadate = "{end_date_str}"
+        				datadate = (select max(DataDate) from {STOCK_MAP_TABLE_NAME} where DataDate <= "{end_date_str}")
         		)
         	) WHERE rk <= 10
         )

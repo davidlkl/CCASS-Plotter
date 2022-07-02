@@ -30,7 +30,6 @@ stock_map_list, min_date, max_date = get_init_params(conn)
 app = dash.Dash(__name__)
 app.config.suppress_callback_exceptions = True # Dynamic layout will trigger unnecessary warnings
 app.layout = html.Div([
-    dcc.Store(id='trend-analysis-store'),
     dcc.Store(id='transaction-finder-store'),
     dcc.Store(id='transaction-finder-selected-participant'),
     dcc.Tabs(id="tabs", value='trend-analysis', children=[
@@ -51,7 +50,8 @@ def render_content(tab):
         return get_transaction_finder_tab(stock_map_list, min_date, max_date)
 
 @app.callback(
-    Output('trend-analysis-store', 'data'),
+    Output('trend-plot', 'figure'),
+    Output('dt-trend-analysis', 'data'),
     Input('trend-analysis-select-stock', 'value'),
     Input('trend-analysis-select-date-range', 'start_date'),
     Input('trend-analysis-select-date-range', 'end_date'),     
@@ -68,7 +68,20 @@ def on_stock_code_selected(selected_stock_code, start_date, end_date):
         selected_stock_code, start_date_string, end_date_string, conn
     )
     
-    return df_trend_top.to_dict('records')
+    top_participants = df_trend_top.iloc[-10:][['ParticipantID', 'ParticipantName']].values.tolist()
+    df_trend_top_groupby_obj = df_trend_top.groupby('ParticipantID')[['DataDate', 'FracOfShares']]
+    
+    data_for_graph = []
+    for participant_id, participant_name in top_participants:
+        df_participant = df_trend_top_groupby_obj.get_group(participant_id)
+        data_for_graph.append({
+            'name': participant_name,
+            'mode': 'lines+markets',
+            'x': df_participant['DataDate'].values.tolist(),
+            'y': df_participant['FracOfShares'].values.tolist(),
+        })
+
+    return dict(data=data_for_graph), df_trend_top.to_dict('records')
         
 @app.callback(
     Output('transaction-finder-store', 'data'),
@@ -89,37 +102,6 @@ def on_transaction_finder_filter_selected(selected_stock_code, start_date, end_d
     
     return df_shareholding_delta.to_dict('records')
 
-@app.callback(
-    Output('trend-plot', 'figure'),
-    Output('dt-trend-analysis', 'data'),
-    Input('trend-analysis-store', 'data'),
-)
-def on_trend_analysis_data_changed(data):
-    top_participants = list(map(lambda d: (d['ParticipantID'], d['ParticipantName']), data[-10:]))
-    
-    cache = {
-        pid: {
-            'DataDate': [],
-            'FracOfShares': [],
-        }
-        for pid, pname in top_participants   
-    }
-    for row in data:
-        if row['ParticipantID'] in cache:
-            cache[row['ParticipantID']]['DataDate'].append(row['DataDate'])
-            cache[row['ParticipantID']]['FracOfShares'].append(row['FracOfShares'])
-    
-    data_for_graph = []
-    for participant_id, participant_name in top_participants:
-        data_for_graph.append({
-            'name': participant_name,
-            'mode': 'lines+markets',
-            'x': cache[participant_id]['DataDate'],
-            'y': cache[participant_id]['FracOfShares'],
-        })
-
-    return dict(data=data_for_graph), data
-    
 @app.callback(
     Output('dt-top-changes-in-shareholding', 'data'),
     Output('dt-bottom-changes-in-shareholding', 'data'),
