@@ -46,6 +46,8 @@ A python library which provides an integrated back and fron end framework for ra
 Dash is selected because it is my first time trying a python based front end.
 - Waitress<br>
 A production-quality pure-Python WSGI server.
+- python-dotenv<br>
+To load the .env file and get the environment type (DEV|PROD)
 #### How to run:
 1. Set up .env file (DEV or PROD)
 ```
