@@ -57,17 +57,21 @@ def render_content(tab):
     Input('trend-analysis-select-date-range', 'end_date'),     
 )
 def on_stock_code_selected(selected_stock_code, start_date, end_date):
-    
     start_date_object = datetime.date.fromisoformat(start_date)
     start_date_string = start_date_object.strftime('%Y-%m-%d')
         
     end_date_object = datetime.date.fromisoformat(end_date)
     end_date_string = end_date_object.strftime('%Y-%m-%d')
     
+    date_range = pd.bdate_range(
+        start=start_date_object,
+        end=end_date_object
+    )
+    
     df_trend_top = get_shareholding_time_series_for_top_participants(
         selected_stock_code, start_date_string, end_date_string, conn
     )
-    
+    df_trend_top['DataDate'] = pd.to_datetime(df_trend_top['DataDate'])
     top_participants = (
         df_trend_top[
             df_trend_top['DataDate'] == df_trend_top['DataDate'].max()
@@ -77,11 +81,14 @@ def on_stock_code_selected(selected_stock_code, start_date, end_date):
     
     data_for_graph = []
     for participant_id, participant_name in top_participants:
-        df_participant = df_trend_top_groupby_obj.get_group(participant_id)
+        df_participant = (
+            df_trend_top_groupby_obj.get_group(participant_id)
+            .set_index('DataDate').reindex(date_range).fillna(0)
+        )
         data_for_graph.append({
             'name': participant_name,
             'mode': 'lines+markets',
-            'x': df_participant['DataDate'].values.tolist(),
+            'x': date_range,
             'y': df_participant['FracOfShares'].values.tolist(),
         })
 
