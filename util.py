@@ -125,7 +125,7 @@ def get_shareholding_time_series_for_top_participants(stock_code: str, start_dat
         			select ParticipantID, Shareholding from {CCASS_TABLE_NAME}
         			where
         				stockcode = "{stock_code}" and 
-        				datadate = (select max(datadate) from {CCASS_TABLE_NAME} where StockCode = "{stock_code}")
+        				datadate = "{end_date_str}"
         		)
         	) WHERE rk <= 10
         )
