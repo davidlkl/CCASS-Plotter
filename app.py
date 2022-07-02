@@ -68,7 +68,11 @@ def on_stock_code_selected(selected_stock_code, start_date, end_date):
         selected_stock_code, start_date_string, end_date_string, conn
     )
     
-    top_participants = df_trend_top.iloc[-10:][['ParticipantID', 'ParticipantName']].values.tolist()
+    top_participants = (
+        df_trend_top[
+            df_trend_top['DataDate'] == df_trend_top['DataDate'].max()
+        ][['ParticipantID', 'ParticipantName']].values.tolist()
+    )
     df_trend_top_groupby_obj = df_trend_top.groupby('ParticipantID')[['DataDate', 'FracOfShares']]
     
     data_for_graph = []
