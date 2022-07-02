@@ -57,6 +57,7 @@ def get_trend_analysis_tab(stock_map_list: list, min_date: datetime.date, max_da
                 columns=TREND_TAB_DATA_COLUMNS,
                 sort_action='native',
                 filter_action='native',
+                page_size=30,
             )
         , style=dict(maxWidth='80%', marginLeft='30px')),
     ])

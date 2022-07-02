@@ -95,16 +95,27 @@ def on_transaction_finder_filter_selected(selected_stock_code, start_date, end_d
     Input('trend-analysis-store', 'data'),
 )
 def on_trend_analysis_data_changed(data):
-    top_participants = map(lambda d: (d['ParticipantID'], d['ParticipantName']), data[-10:])
+    top_participants = list(map(lambda d: (d['ParticipantID'], d['ParticipantName']), data[-10:]))
+    
+    cache = {
+        pid: {
+            'DataDate': [],
+            'FracOfShares': [],
+        }
+        for pid, pname in top_participants   
+    }
+    for row in data:
+        if row['ParticipantID'] in cache:
+            cache[row['ParticipantID']]['DataDate'].append(row['DataDate'])
+            cache[row['ParticipantID']]['FracOfShares'].append(row['FracOfShares'])
     
     data_for_graph = []
     for participant_id, participant_name in top_participants:
-        data_participant = list(filter(lambda d: d['ParticipantID'] == participant_id, data))
         data_for_graph.append({
             'name': participant_name,
             'mode': 'lines+markets',
-            'x': pd.to_datetime(list(map(lambda d: d['DataDate'], data_participant))),
-            'y': list(map(lambda d: d['FracOfShares'], data_participant)),
+            'x': cache[participant_id]['DataDate'],
+            'y': cache[participant_id]['FracOfShares'],
         })
 
     return dict(data=data_for_graph), data
