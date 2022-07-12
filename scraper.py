@@ -27,7 +27,7 @@ from config import CCASS_TABLE_NAME, STOCK_MAP_TABLE_NAME
 from config import STOCK_CODE_LIST_URL, MAIN_URL
 from config import DATE_RANGE_LIST, SHAREHOLDING_THRESHOLD_TO_SCRAPE, NUMBER_OF_STOCKS_SCRAPED
 
-from util import get_db_connection
+from util import get_db_connection, create_table, store_df_to_db
 
 db_lock = threading.Lock()
 
@@ -62,20 +62,8 @@ class CCASSScraper:
         
     @acquire_lock
     def create_table(self):
-        self.cursor = self.conn.cursor()
-        self.cursor.execute(f"""
-            CREATE TABLE IF NOT EXISTS 
-            {CCASS_TABLE_NAME}
-            (DataDate, StockCode, ParticipantID, ParticipantName, ParticipantAddress, Shareholding, FracOfShares)
-        """)
-        self.cursor.execute(f"""
-            CREATE TABLE IF NOT EXISTS 
-            {STOCK_MAP_TABLE_NAME}
-            (DataDate, StockCode, StockName)
-        """)
-        self.conn.commit()
-        self.cursor.close()
-    
+        create_table(self.conn)
+        
     def initialize_chrome_driver(self):
         if HEADLESS:
             options = Options()
@@ -119,6 +107,7 @@ class CCASSScraper:
         for table_row in table_rows:
             table_rows_data.append([td.get_text(strip=True) for td in table_row.find_all('td')])
         df = pd.DataFrame(data=table_rows_data, columns=table_columns).dropna()
+        df['StockName'] = df['StockName'].str.replace("'", '')
         df['DataDate'] = date.strftime('%Y-%m-%d')
         df = df[['DataDate', *table_columns]]
         return df
@@ -126,7 +115,7 @@ class CCASSScraper:
     @acquire_lock
     def load_existing_date_stockCode(self, date_str: str):
         self.scraped_CCASS_date_stockCode = set(
-            pd.read_sql_query(f'Select Distinct StockCode from {CCASS_TABLE_NAME} where DataDate = "{date_str}"', self.conn)
+            pd.read_sql_query(f"Select Distinct StockCode from {CCASS_TABLE_NAME} where DataDate = '{date_str}'", self.conn)
             .set_index('StockCode').index.tolist()
         )
     
@@ -134,7 +123,7 @@ class CCASSScraper:
     def load_existing_stock_map_by_date(self, date_str: str):
         self.scraped_stock_map = (
             pd.read_sql_query(
-                f'Select StockCode, StockName from {STOCK_MAP_TABLE_NAME} where DataDate = "{date_str}"',
+                f"Select StockCode, StockName from {STOCK_MAP_TABLE_NAME} where DataDate = '{date_str}'",
                 self.conn
             )
         )
@@ -192,6 +181,8 @@ class CCASSScraper:
             table_rows_data.append([td.get_text(strip=True) for td in table_row.find_all('div', attrs={'class': 'mobile-list-body'})])
         df = pd.DataFrame(data=table_rows_data, columns=table_columns[:len(table_rows_data[0])])
         df['ParticipantID'] = np.where(df['ParticipantID']=='', 'None', df['ParticipantID'])
+        df['ParticipantName'] = df['ParticipantName'].str.replace("'", '')
+        df['ParticipantAddress'] = df['ParticipantAddress'].str.replace("'", '')
         df['Shareholding'] = pd.to_numeric(df['Shareholding'].str.replace(',', ''))
         if 'FracOfShares' in df.columns:
             df['FracOfShares'] = pd.to_numeric(df['FracOfShares'].str.replace('%', ''))
@@ -207,9 +198,9 @@ class CCASSScraper:
     @acquire_lock
     def store_df_to_db(self, df_new_data: pd.DataFrame, table_name: str):
         try:
-            df_new_data.to_sql(table_name, self.conn, if_exists='append', index=False)
-        except:
-            print('write error')
+            store_df_to_db(df_new_data, self.conn, table_name)
+        except Exception as e:
+            print(f'write error: {e}')
         
     def scrape_one_page(self, date: datetime.date, stock_code: str) -> bool:
         if self.check_if_CCASS_scraped(date, stock_code):
@@ -241,7 +232,7 @@ class CCASSScraper:
         self.scraped_df = pd.DataFrame()
         run_count = 0
         has_data_count = 0 # Not every stock has table to be scraped
-        buffer_size = 50
+        buffer_size = 100
         for stock_code in df_stock_list['StockCode'].values.tolist():
             has_data = self.scrape_one_page(date, stock_code)
             if run_count % 100 == 0:
@@ -269,10 +260,10 @@ def scrape_task(threadId: int, date: datetime.date,):
 
 
 def main():
-    scrape_task(0, DATE_RANGE_LIST[::-1][0])
+    # scrape_task(0, DATE_RANGE_LIST[::-1][0])
     
-    # executor = ThreadPoolExecutor(max_workers=12)
-    # jobs = [executor.submit(scrape_task, i, DATE_RANGE_LIST[::-1][i]) for i in range(0, len(DATE_RANGE_LIST))]
+    executor = ThreadPoolExecutor(max_workers=1)
+    jobs = [executor.submit(scrape_task, i, DATE_RANGE_LIST[::-1][i]) for i in range(0, len(DATE_RANGE_LIST))]
     
         
 if __name__ == '__main__':

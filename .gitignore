@@ -9,6 +9,7 @@ chromedriver*.exe
 
 # Database object
 *.db
+*.csv
 
 # Temp SQL script
 *.sql

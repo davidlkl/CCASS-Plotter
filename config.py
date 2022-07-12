@@ -8,6 +8,15 @@ Created on Tue Jun 28 09:07:00 2022
 import datetime
 import pandas as pd
 import glob
+import os
+from dotenv import load_dotenv
+
+# Env
+load_dotenv()
+# DEV / PROD
+BASE_ENV = os.getenv("BASE_ENV")
+# QUEST / SQLITE
+DB_TYPE = os.getenv("DB")
 
 # Chrome
 try:
@@ -18,7 +27,8 @@ except:
 HEADLESS = True
 
 # DB
-DB_NAME = 'ccass.db'
+QUEST_DB_CONN_STR = "dbname='qdb' user='admin' host='127.0.0.1' port='8812' password='quest'"
+SQLITE_DB_NAME = 'ccass.db'
 CCASS_TABLE_NAME = 'CCASS'
 STOCK_MAP_TABLE_NAME = 'StockMap'
 

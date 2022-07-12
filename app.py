@@ -14,8 +14,8 @@ from waitress import serve
 import pandas as pd
 import datetime
 
-from config import HOST, PORT
-from util import create_index_if_not_exist, get_init_params, load_base_env
+from config import HOST, PORT, BASE_ENV
+from util import create_index_if_not_exist, get_init_params
 from util import get_db_connection
 from util import get_shareholding_delta_for_transaction_finder
 from util import get_shareholding_time_series_for_top_participants
@@ -211,9 +211,7 @@ def on_change_selected_participant(shareholding_data, selected_participant):
     
     
 if __name__ == "__main__":
-    env = load_base_env()
-    
-    if env == 'DEV':
+    if BASE_ENV == 'DEV':
         app.run_server(host=HOST, port=PORT, debug=True)
-    elif env == 'PROD':
+    elif BASE_ENV == 'PROD':
         serve(app.server, host=HOST, port=PORT,)
